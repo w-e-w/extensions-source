@@ -100,6 +100,19 @@ class Komga(
     override fun OkHttpClient.Builder.configureClient() = apply {
         addInterceptor(::authenticate)
         dns(Dns.SYSTEM) // don't use DNS over HTTPS as it breaks IP addressing
+
+        cache(null)
+
+        networkInterceptors().removeAll {
+            it.javaClass.simpleName == "CacheControlInterceptor"
+        }
+
+        dispatcher(
+            okhttp3.Dispatcher().apply {
+                maxRequests = Int.MAX_VALUE
+                maxRequestsPerHost = Int.MAX_VALUE
+            },
+        )
     }
 
     // Cookies are shared between Komga sources on the same host, so the session goes in a header
