@@ -99,6 +99,7 @@ class Komga(
 
     override fun OkHttpClient.Builder.configureClient() = apply {
         addInterceptor(::authenticate)
+        addInterceptor(pageRoutingInterceptor)
         dns(Dns.SYSTEM) // don't use DNS over HTTPS as it breaks IP addressing
 
         cache(null)
@@ -113,6 +114,25 @@ class Komga(
                 maxRequestsPerHost = Int.MAX_VALUE
             },
         )
+    }
+
+    private val http1Client: OkHttpClient by lazy {
+        client.newBuilder()
+            .protocols(listOf(okhttp3.Protocol.HTTP_1_1))
+            .connectionPool(okhttp3.ConnectionPool(64, 5, java.util.concurrent.TimeUnit.MINUTES))
+            .apply {
+                interceptors().remove(pageRoutingInterceptor)
+            }
+            .build()
+    }
+
+    private val pageRoutingInterceptor: Interceptor = okhttp3.Interceptor { chain ->
+        val request = chain.request()
+        if (request.url.encodedPath.contains("/pages/")) {
+            http1Client.newCall(request).execute()
+        } else {
+            chain.proceed(request)
+        }
     }
 
     // Cookies are shared between Komga sources on the same host, so the session goes in a header
