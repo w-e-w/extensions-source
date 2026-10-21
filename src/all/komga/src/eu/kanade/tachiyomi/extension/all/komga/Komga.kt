@@ -109,6 +109,12 @@ class Komga(
         }
         dns(Dns.SYSTEM) // don't use DNS over HTTPS as it breaks IP addressing
 
+        cache(null)
+
+        networkInterceptors().removeAll {
+            it.javaClass.simpleName == "CacheControlInterceptor"
+        }
+
         dispatcher(
             okhttp3.Dispatcher().apply {
                 maxRequests = 1024
