@@ -108,6 +108,13 @@ class Komga(
             }
         }
         dns(Dns.SYSTEM) // don't use DNS over HTTPS as it breaks IP addressing
+
+        dispatcher(
+            okhttp3.Dispatcher().apply {
+                maxRequests = 1024
+                maxRequestsPerHost = 1024
+            },
+        )
     }
 
     override suspend fun getPopularManga(page: Int): MangasPage {
