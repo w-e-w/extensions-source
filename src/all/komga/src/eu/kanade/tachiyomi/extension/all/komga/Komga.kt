@@ -138,7 +138,9 @@ class Komga(
 
     private val pagesRoutingInterceptor: Interceptor = okhttp3.Interceptor { chain ->
         val request = chain.request()
-        if (request.url.encodedPath.contains("/pages/")) {
+        val segments = request.url.pathSegments
+        val isPageImage = segments.size >= 2 && segments[segments.size - 2] == "pages"
+        if (useHttp1ForPages && isPageImage) {
             http1Client.newCall(request).execute()
         } else {
             chain.proceed(request)
