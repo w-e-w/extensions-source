@@ -7,6 +7,7 @@ import android.text.InputType
 import android.widget.Toast
 import androidx.preference.MultiSelectListPreference
 import androidx.preference.PreferenceScreen
+import androidx.preference.SwitchPreferenceCompat
 import eu.kanade.tachiyomi.AppInfo
 import eu.kanade.tachiyomi.source.ConfigurableSource
 import eu.kanade.tachiyomi.source.UnmeteredSource
@@ -89,6 +90,9 @@ class Komga(
 
     private val defaultLibraries
         get() = preferences.getStringSet(PREF_DEFAULT_LIBRARIES, emptySet())!!
+
+    private val useHttp1ForPages: Boolean
+        get() = preferences.getBoolean(PREF_HTTP1_PAGES, PREF_HTTP1_PAGES_DEFAULT)
 
     override fun Headers.Builder.configureHeaders() = apply {
         set("User-Agent", "TachiyomiKomga/${AppInfo.getVersionName()}")
@@ -591,6 +595,13 @@ class Komga(
             validate = { it.length == 1 },
             validationMessage = "Only one character",
         )
+
+        SwitchPreferenceCompat(screen.context).apply {
+            key = PREF_HTTP1_PAGES
+            title = "Force HTTP/1.1 for page requests"
+            summary = "Bypasses HTTP/2 multiplexing on servers that support it, can improve throughput on some networks."
+            setDefaultValue(PREF_HTTP1_PAGES_DEFAULT)
+        }.also(screen::addPreference)
     }
 
     @Serializable
@@ -650,5 +661,9 @@ private const val PREF_CHAPTER_NAME_TEMPLATE = "Chapter name template"
 private const val PREF_CHAPTER_NAME_TEMPLATE_DEFAULT = "{number} - {title} ({size})"
 private const val PREF_SCANLATOR_SEP = "Scanlator seperator"
 private const val PREF_SCANLATOR_SEP_DEFAULT = ","
+
+private const val PREF_HTTP1_PAGES = "pref_http1_pages"
+
+private const val PREF_HTTP1_PAGES_DEFAULT = false
 
 private val SUPPORTED_IMAGE_TYPES = listOf("image/jpeg", "image/png", "image/gif", "image/webp", "image/jxl", "image/heif", "image/avif")
