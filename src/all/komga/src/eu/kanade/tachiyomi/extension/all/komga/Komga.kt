@@ -40,6 +40,7 @@ import okhttp3.Dns
 import okhttp3.Headers
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
+import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Response
 import org.apache.commons.text.StringSubstitutor
@@ -121,6 +122,27 @@ class Komga(
                 maxRequestsPerHost = 1024
             },
         )
+
+        addInterceptor(pagesRoutingInterceptor)
+    }
+
+    private val http1Client: OkHttpClient by lazy {
+        client.newBuilder()
+            .protocols(listOf(okhttp3.Protocol.HTTP_1_1))
+            .connectionPool(okhttp3.ConnectionPool(64, 5, java.util.concurrent.TimeUnit.MINUTES))
+            .apply {
+                interceptors().remove(pagesRoutingInterceptor)
+            }
+            .build()
+    }
+
+    private val pagesRoutingInterceptor: Interceptor = okhttp3.Interceptor { chain ->
+        val request = chain.request()
+        if (request.url.encodedPath.contains("/pages/")) {
+            http1Client.newCall(request).execute()
+        } else {
+            chain.proceed(request)
+        }
     }
 
     override suspend fun getPopularManga(page: Int): MangasPage {
